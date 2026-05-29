@@ -1,40 +1,38 @@
 # Pose Estimation Tauri
 
-Тестовый проект — десктопное приложение на [Tauri v2](https://tauri.app/) с определением позы человека в реальном времени.
+Test project — a desktop app built with [Tauri v2](https://tauri.app/) for real-time human pose estimation.
 
-## Стек
+## Stack
 
-- **Tauri 2** — оболочка десктопного приложения (Rust + WebView)
-- **Vite + TypeScript** — фронтенд
-- **RTMPose (ONNX)** — модель определения ключевых точек тела (COCO-17)
-- **WebAssembly** — инференс модели в браузерном контексте
+- **Tauri 2** — desktop shell (Rust + WebView)
+- **Vite + TypeScript** — frontend
+- **RTMPose (ONNX)** — body keypoint detection model (COCO-17)
+- **WebAssembly** — model inference in the browser context
 
-## Возможности
+## Features
 
-- Определение 17 ключевых точек тела (COCO формат)
-- Отрисовка скелета с цветными костями
-- Поддержка Android сборки
+- Detects 17 body keypoints (COCO format)
+- Renders skeleton with colored bones
+- Android build support
 
-## Требования
+## Requirements
 
 - [Node.js](https://nodejs.org/) 18+
 - [Rust](https://www.rust-lang.org/) (stable)
 - [wasm-pack](https://rustwasm.github.io/wasm-pack/)
-- Tauri CLI: `npm install`
 
-## Запуск
+## Getting Started
 
 ```bash
-# Установить зависимости
 npm install
 
-# Собрать WASM модуль
+# Build the WASM module
 npm run wasm:build
 
-# Запустить в режиме разработки
+# Run in dev mode
 npm run tauri:dev
 
-# Собрать релиз
+# Build release
 npm run tauri:build
 ```
 
@@ -46,12 +44,12 @@ npm run android:dev
 npm run android:build
 ```
 
-## Структура
+## Project Structure
 
 ```
-├── src/              # TypeScript фронтенд
-│   └── pose.ts       # Логика отрисовки скелета
-├── src-tauri/        # Rust бэкенд (Tauri)
-├── src-wasm/         # WebAssembly модуль
-└── models/           # ONNX модели (rtmpose.onnx)
+├── src/              # TypeScript frontend
+│   └── pose.ts       # Skeleton rendering logic
+├── src-tauri/        # Rust backend (Tauri)
+├── src-wasm/         # WebAssembly module
+└── models/           # ONNX models (rtmpose.onnx)
 ```
