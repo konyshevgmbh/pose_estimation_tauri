@@ -101,26 +101,29 @@ async function init() {
   }
   stepDone(1);
 
-  // step 2: warmup
-  initText.textContent = "Warming up…";
-  try {
-    const jpeg = captureJpeg(video, captureCanvas);
-    if (jpeg) {
-      await invoke("run_inference", {
-        jpegB64: jpeg,
-        origW: video.videoWidth,
-        origH: video.videoHeight,
-      });
-    }
-  } catch (_) { /* warmup failure is non-fatal */ }
-  stepDone(2);
+  // step 2: warmup — WGPU compiles shaders on first call (can take minutes).
+  // Fire-and-forget: proceed to Start immediately, shaders compile in background.
+  initText.textContent = "Compiling GPU shaders…";
+  const warmupJpeg = captureJpeg(video, captureCanvas);
+  if (warmupJpeg) {
+    invoke("run_inference", {
+      jpegB64: warmupJpeg,
+      origW: video.videoWidth,
+      origH: video.videoHeight,
+    }).catch(() => {}).then(() => {
+      stepDone(2);
+      statusEl.textContent = "Running (GPU ready)";
+    });
+  } else {
+    stepDone(2);
+  }
 
-  // step 3: go
-  initText.textContent = "Ready!";
+  // step 3: go immediately — first frames may be slow while shaders compile
+  initText.textContent = "Starting…";
   stepDone(3);
   await new Promise((r) => setTimeout(r, 300));
   initScreen.style.display = "none";
-  statusEl.textContent = "Running";
+  statusEl.textContent = "Running (warming up GPU…)";
   running = true;
   startInferenceLoop(async (jpeg, w, h) =>
     invoke<Keypoint[]>("run_inference", { jpegB64: jpeg, origW: w, origH: h })
@@ -139,7 +142,11 @@ function startInferenceLoop(infer: InferFn) {
     const jpeg = captureJpeg(video, captureCanvas);
     if (jpeg) {
       try {
-        const kps = await infer(jpeg, video.videoWidth, video.videoHeight);
+        let kps = await infer(jpeg, video.videoWidth, video.videoHeight);
+        // front camera video is mirrored in display but captureJpeg reads raw frame
+        if (facingMode === "user") {
+          kps = kps.map(kp => ({ ...kp, x: video.videoWidth - kp.x }));
+        }
         renderPose(kps);
         timeEl.textContent = `${Math.round(performance.now() - t0)} ms`;
       } catch (_) {}

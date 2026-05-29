@@ -9,21 +9,26 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
+burn-onnx   = "0.21"
 
 [dependencies]
-tauri    = { version = "2", features = [] }
-serde    = { version = "1", features = ["derive"] }
+tauri      = { version = "2", features = [] }
+serde      = { version = "1", features = ["derive"] }
 serde_json = "1"
 
-tract-onnx = "0.21"
+burn            = { version = "0.21", features = ["wgpu"] }
+burn-store      = { version = "0.21", features = ["std", "burnpack"] }
+cubecl-runtime  = "0.10"
+cubecl-common   = "0.10"
+dirs            = "5"
 
-# image decoding (JPEG frames from frontend)
-image    = { version = "0.25", default-features = false, features = ["jpeg"] }
-
-# base64 decode of captured frames
-base64   = "0.22"
+image  = { version = "0.25", default-features = false, features = ["jpeg"] }
+base64 = "0.22"
 
 [profile.release]
-opt-level = "s"
+opt-level = 3
 strip = true
 lto = true
+
+[profile.release.build-override]
+opt-level = 3
