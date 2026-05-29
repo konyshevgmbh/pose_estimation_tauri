@@ -21,11 +21,11 @@
     "icons": "tauri icon src-tauri/app-icon.png"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2"
+    "@tauri-apps/api": "^2.11.0"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2",
-    "typescript": "^5.2.2",
+    "@tauri-apps/cli": "^2.11.2",
+    "typescript": "^6.0.3",
     "vite": "^8.0.14"
   }
 }
