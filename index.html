@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Pose Estimation</title>
+    <script type="module" crossorigin src="/pose_estimation_tauri/assets/index-CfGVjxuJ.js"></script>
+    <link rel="stylesheet" crossorigin href="/pose_estimation_tauri/assets/index-DEXrb6B2.css">
+  </head>
+  <body>
+    <div class="view">
+      <video id="video" playsinline autoplay muted></video>
+      <canvas id="overlay"></canvas>
+    </div>
+
+    <div class="hud">
+      <span id="status">Initializing</span>
+      &nbsp;|&nbsp;
+      <span id="inference-time">-- ms</span>
+    </div>
+
+    <button id="camera-btn" class="fab" title="Flip camera">&#x21BB;</button>
+
+    <div id="init-screen" class="init-screen">
+      <div class="init-card">
+        <h2>Pose Estimation</h2>
+        <ul class="init-steps">
+          <li class="init-step active">Camera permission</li>
+          <li class="init-step">Load ONNX model</li>
+          <li class="init-step">Warm up inference</li>
+          <li class="init-step">Start</li>
+        </ul>
+        <p id="init-text">Starting&#8230;</p>
+      </div>
+    </div>
+
+  </body>
+</html>
