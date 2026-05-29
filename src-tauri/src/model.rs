@@ -15,24 +15,26 @@ const STD: [f32; 3] = [58.395, 57.12, 57.375];
 
 pub type Model = SimplePlan<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>;
 
-pub fn load_session(path: &str) -> Result<Model, String> {
-    tract_onnx::onnx()
-        .model_for_path(path)
-        .map_err(|e| e.to_string())?
+fn optimize(model: InferenceModel) -> Result<Model, String> {
+    model
         .into_optimized()
         .map_err(|e| e.to_string())?
         .into_runnable()
         .map_err(|e| e.to_string())
 }
 
+pub fn load_session(path: &str) -> Result<Model, String> {
+    let model = tract_onnx::onnx()
+        .model_for_path(path)
+        .map_err(|e| e.to_string())?;
+    optimize(model)
+}
+
 pub fn load_session_from_bytes(bytes: &[u8]) -> Result<Model, String> {
-    tract_onnx::onnx()
+    let model = tract_onnx::onnx()
         .model_for_read(&mut Cursor::new(bytes))
-        .map_err(|e| e.to_string())?
-        .into_optimized()
-        .map_err(|e| e.to_string())?
-        .into_runnable()
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+    optimize(model)
 }
 
 pub fn run_pose(
@@ -43,17 +45,24 @@ pub fn run_pose(
 ) -> Result<Vec<Keypoint>, String> {
     // 1. decode JPEG → resize 192×256 → RGB
     let bytes = STANDARD.decode(jpeg_b64).map_err(|e| e.to_string())?;
-    let img = image::load_from_memory(&bytes)
+    let raw = image::load_from_memory(&bytes)
         .map_err(|e| e.to_string())?
-        .resize_exact(INPUT_W as u32, INPUT_H as u32, FilterType::Triangle)
-        .to_rgb8();
+        .resize_exact(INPUT_W as u32, INPUT_H as u32, FilterType::Nearest)
+        .to_rgb8()
+        .into_raw(); // HWC interleaved Vec<u8>
 
-    // 2. build NCHW tensor
-    let input: Tensor = tract_ndarray::Array4::from_shape_fn(
-        (1, 3, INPUT_H, INPUT_W),
-        |(_, c, y, x)| (img.get_pixel(x as u32, y as u32)[c] as f32 - MEAN[c]) / STD[c],
-    )
-    .into();
+    // 2. build NCHW tensor — linear iteration avoids per-pixel bounds checks
+    let n = INPUT_H * INPUT_W;
+    let mut data = vec![0f32; 3 * n];
+    for i in 0..n {
+        let b = i * 3;
+        for c in 0..3 {
+            data[c * n + i] = (raw[b + c] as f32 - MEAN[c]) / STD[c];
+        }
+    }
+    let input: Tensor = tract_ndarray::Array4::from_shape_vec((1, 3, INPUT_H, INPUT_W), data)
+        .map_err(|e| e.to_string())?
+        .into();
 
     // 3. run inference
     let outputs = session

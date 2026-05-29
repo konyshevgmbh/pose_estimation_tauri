@@ -1,4 +1,3 @@
-use base64::{engine::general_purpose::STANDARD, Engine};
 use image::imageops::FilterType;
 use serde::Serialize;
 use std::cell::RefCell;
@@ -26,36 +25,51 @@ thread_local! {
     static MODEL: RefCell<Option<Model>> = RefCell::new(None);
 }
 
-#[wasm_bindgen]
-pub fn load_model(bytes: &[u8]) -> Result<(), JsError> {
-    let model = tract_onnx::onnx()
-        .model_for_read(&mut Cursor::new(bytes))
-        .map_err(|e| JsError::new(&e.to_string()))?
+fn optimize(model: InferenceModel) -> Result<Model, JsError> {
+    model
         .into_optimized()
         .map_err(|e| JsError::new(&e.to_string()))?
         .into_runnable()
-        .map_err(|e| JsError::new(&e.to_string()))?;
-    MODEL.with(|m| *m.borrow_mut() = Some(model));
-    Ok(())
+        .map_err(|e| JsError::new(&e.to_string()))
 }
 
 #[wasm_bindgen]
-pub fn run_inference(jpeg_b64: &str, orig_w: u32, orig_h: u32) -> Result<JsValue, JsError> {
+pub fn load_model(bytes: &[u8]) -> Result<(), JsError> {
+    let inference = tract_onnx::onnx()
+        .model_for_read(&mut Cursor::new(bytes))
+        .map_err(|e| JsError::new(&e.to_string()))?;
+    let runnable = optimize(inference)?;
+    MODEL.with(|m| *m.borrow_mut() = Some(runnable));
+    Ok(())
+}
+
+/// Accepts raw JPEG bytes (Uint8Array on JS side — no base64 overhead).
+#[wasm_bindgen]
+pub fn run_inference(jpeg_bytes: &[u8], orig_w: u32, orig_h: u32) -> Result<JsValue, JsError> {
     MODEL.with(|cell| {
         let guard = cell.borrow();
         let model = guard.as_ref().ok_or_else(|| JsError::new("model not loaded"))?;
 
-        let bytes = STANDARD.decode(jpeg_b64).map_err(|e| JsError::new(&e.to_string()))?;
-        let img = image::load_from_memory(&bytes)
+        // resize 192×256, Nearest is faster than Triangle for inference quality
+        let raw = image::load_from_memory(jpeg_bytes)
             .map_err(|e| JsError::new(&e.to_string()))?
-            .resize_exact(INPUT_W as u32, INPUT_H as u32, FilterType::Triangle)
-            .to_rgb8();
+            .resize_exact(INPUT_W as u32, INPUT_H as u32, FilterType::Nearest)
+            .to_rgb8()
+            .into_raw(); // HWC interleaved Vec<u8>
 
-        let input: Tensor = tract_ndarray::Array4::from_shape_fn(
-            (1, 3, INPUT_H, INPUT_W),
-            |(_, c, y, x)| (img.get_pixel(x as u32, y as u32)[c] as f32 - MEAN[c]) / STD[c],
-        )
-        .into();
+        // NCHW tensor — linear iteration avoids per-pixel bounds checks
+        let n = INPUT_H * INPUT_W;
+        let mut data = vec![0f32; 3 * n];
+        for i in 0..n {
+            let b = i * 3;
+            for c in 0..3 {
+                data[c * n + i] = (raw[b + c] as f32 - MEAN[c]) / STD[c];
+            }
+        }
+        let input: Tensor =
+            tract_ndarray::Array4::from_shape_vec((1, 3, INPUT_H, INPUT_W), data)
+                .map_err(|e| JsError::new(&e.to_string()))?
+                .into();
 
         let outputs = model
             .run(tvec!(input.into()))

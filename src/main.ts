@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { startCamera, captureJpeg, type FacingMode } from "./camera";
+import { startCamera, captureJpeg, captureJpegBytes, type FacingMode } from "./camera";
 import { drawSkeleton, scaleKeypoints, type Keypoint } from "./pose";
 
 const isTauri = "__TAURI_INTERNALS__" in window;
@@ -60,8 +60,8 @@ async function init() {
       // step 2: warmup
       initText.textContent = "Warming up…";
       try {
-        const jpeg = captureJpeg(video, captureCanvas);
-        if (jpeg) wasm.run_inference(jpeg, video.videoWidth, video.videoHeight);
+        const jpegBytes = captureJpegBytes(video, captureCanvas);
+        if (jpegBytes) wasm.run_inference(jpegBytes, video.videoWidth, video.videoHeight);
       } catch (_) {}
       stepDone(2);
 
@@ -71,7 +71,7 @@ async function init() {
       initScreen.style.display = "none";
       statusEl.textContent = "Running (Web)";
       running = true;
-      startInferenceLoop((jpeg, w, h) => wasm.run_inference(jpeg, w, h) as Keypoint[]);
+      startInferenceBytesLoop((bytes, w, h) => wasm.run_inference(bytes, w, h) as Keypoint[]);
     } catch (e) {
       stepError(1, `WASM error: ${e}\nPlace rtmpose.onnx in models/`);
     }
@@ -128,14 +128,13 @@ async function init() {
   startRenderLoop();
 }
 
-// --- inference loop ---
+// --- inference loop (Tauri — base64 string IPC) ---
 type InferFn = (jpeg: string, w: number, h: number) => Keypoint[] | Promise<Keypoint[]>;
 
 function startInferenceLoop(infer: InferFn) {
   async function tick() {
     if (!running) return;
     const t0 = performance.now();
-
     const jpeg = captureJpeg(video, captureCanvas);
     if (jpeg) {
       try {
@@ -144,11 +143,30 @@ function startInferenceLoop(infer: InferFn) {
         timeEl.textContent = `${Math.round(performance.now() - t0)} ms`;
       } catch (_) {}
     }
-
     const elapsed = performance.now() - t0;
     setTimeout(tick, Math.max(0, FRAME_MS - elapsed));
   }
+  tick();
+}
 
+// --- inference loop (WASM — raw bytes, no base64 overhead) ---
+type InferBytesFn = (bytes: Uint8Array, w: number, h: number) => Keypoint[] | Promise<Keypoint[]>;
+
+function startInferenceBytesLoop(infer: InferBytesFn) {
+  async function tick() {
+    if (!running) return;
+    const t0 = performance.now();
+    const bytes = captureJpegBytes(video, captureCanvas);
+    if (bytes) {
+      try {
+        const kps = await infer(bytes, video.videoWidth, video.videoHeight);
+        renderPose(kps);
+        timeEl.textContent = `${Math.round(performance.now() - t0)} ms`;
+      } catch (_) {}
+    }
+    const elapsed = performance.now() - t0;
+    setTimeout(tick, Math.max(0, FRAME_MS - elapsed));
+  }
   tick();
 }
 

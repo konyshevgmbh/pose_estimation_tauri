@@ -17,6 +17,7 @@
       "request": "launch",
       "url": "http://localhost:5174",
       "webRoot": "${workspaceFolder}/src",
+      "userDataDir": "${workspaceFolder}/.vscode/msedge-profile",
       "preLaunchTask": "npm: dev"
     },
     {
@@ -36,6 +37,7 @@
       "request": "launch",
       "url": "http://localhost:4173",
       "webRoot": "${workspaceFolder}/dist",
+      "userDataDir": "${workspaceFolder}/.vscode/msedge-profile",
       "preLaunchTask": "serve: web"
     },
     {

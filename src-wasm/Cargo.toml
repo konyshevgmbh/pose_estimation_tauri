@@ -7,10 +7,10 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-wasm-bindgen  = "0.2"
-serde-wasm-bindgen = "0.6"
-serde         = { version = "1", features = ["derive"] }
-tract-onnx    = "0.21"
-image         = { version = "0.25", default-features = false, features = ["jpeg"] }
-base64        = "0.22"
-getrandom     = { version = "0.2", features = ["js"] }
+wasm-bindgen       = "0.2.122"
+serde-wasm-bindgen = "0.6.5"
+serde              = { version = "1.0.228", features = ["derive"] }
+tract-onnx         = "0.21"
+tract-linalg       = { version = "0.21", features = ["multithread-mm"] }
+image              = { version = "0.25.10", default-features = false, features = ["jpeg"] }
+getrandom          = { version = "0.2", features = ["js"] }

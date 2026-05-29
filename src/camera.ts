@@ -36,3 +36,17 @@ export function captureJpeg(
   const dataUrl = canvas.toDataURL("image/jpeg", quality);
   return dataUrl.slice(dataUrl.indexOf(",") + 1);
 }
+
+/** Returns raw JPEG bytes as Uint8Array, or null if video not ready. */
+export function captureJpegBytes(
+  video: HTMLVideoElement,
+  canvas: HTMLCanvasElement,
+  quality = 0.6
+): Uint8Array | null {
+  const b64 = captureJpeg(video, canvas, quality);
+  if (b64 === null) return null;
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
