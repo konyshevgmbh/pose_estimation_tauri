@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">pose-estimation</string>
+    <string name="main_activity_title">pose-estimation</string>
+</resources>

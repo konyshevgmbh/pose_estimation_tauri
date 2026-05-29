@@ -1,0 +1,62 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  deploy-web:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache Rust
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-wasm/target
+          key: ${{ runner.os }}-wasm-${{ hashFiles('src-wasm/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-wasm-
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Download model
+        run: |
+          mkdir -p models
+          curl -L "${{ secrets.MODEL_DOWNLOAD_URL }}" -o models/rtmpose.onnx
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build WASM
+        run: npm run wasm:build:release
+
+      - name: Build web
+        run: npm run build
+        env:
+          VITE_BASE: /pose_estimation_tauri/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist

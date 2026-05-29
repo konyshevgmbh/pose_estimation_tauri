@@ -1,0 +1,31 @@
+{
+  "name": "pose-estimation",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "wasm:build": "wasm-pack build src-wasm --target web --out-dir ../src/wasm-pkg",
+    "wasm:build:release": "wasm-pack build src-wasm --target web --out-dir ../src/wasm-pkg --release",
+    "tauri:portable": "tauri build --bundles none",
+    "android:init": "tauri android init",
+    "android:dev": "tauri android dev",
+    "android:build": "tauri android build",
+    "ios:init": "tauri ios init",
+    "ios:dev": "tauri ios dev",
+    "icons": "tauri icon src-tauri/app-icon.png"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "typescript": "^5.2.2",
+    "vite": "^8.0.14"
+  }
+}

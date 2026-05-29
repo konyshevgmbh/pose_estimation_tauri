@@ -1,0 +1,119 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "kill-port-5174",
+      "type": "shell",
+      "command": "Get-NetTCPConnection -LocalPort 5174 -EA SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -EA SilentlyContinue }; exit 0",
+      "presentation": { "reveal": "silent", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "npm: dev",
+      "type": "npm",
+      "script": "dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": { "regexp": "." },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "VITE",
+          "endsPattern": "Local:"
+        }
+      }
+    },
+    {
+      "label": "cargo: build",
+      "type": "shell",
+      "command": "cargo build",
+      "options": { "cwd": "${workspaceFolder}/src-tauri" },
+      "group": "build",
+      "problemMatcher": "$rustc"
+    },
+    {
+      "label": "wasm: build (debug)",
+      "type": "npm",
+      "script": "wasm:build",
+      "group": "build",
+      "problemMatcher": "$rustc",
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "wasm: build (release)",
+      "type": "npm",
+      "script": "wasm:build:release",
+      "group": "build",
+      "problemMatcher": "$rustc",
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "release: web",
+      "type": "npm",
+      "script": "build",
+      "dependsOn": ["wasm: build (release)"],
+      "dependsOrder": "sequence",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "release: desktop",
+      "type": "shell",
+      "command": "npm run tauri:build",
+      "group": "build",
+      "problemMatcher": "$rustc",
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "release: desktop (portable)",
+      "type": "shell",
+      "command": "npm run tauri:portable",
+      "group": "build",
+      "problemMatcher": "$rustc",
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "android: init",
+      "type": "shell",
+      "command": "npm run android:init; $f='src-tauri\\gen\\android\\app\\src\\main\\AndroidManifest.xml'; $c=[System.IO.File]::ReadAllText($f); if ($c -notmatch 'android.permission.CAMERA') { $perm = '<uses-permission android:name=\"android.permission.CAMERA\" />'; $c=$c -replace '(<manifest\\b[^>]*>)','$1'+\"`n    $perm\"; [System.IO.File]::WriteAllText($f,$c); Write-Host 'Camera permission added' }",
+      "group": "build",
+      "env": { "ANDROID_HOME": "d:\\android\\sdk" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "release: android",
+      "type": "shell",
+      "command": "npm run android:build",
+      "group": "build",
+      "env": { "ANDROID_HOME": "d:\\android\\sdk" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "serve: web",
+      "type": "npm",
+      "script": "preview",
+      "dependsOn": ["release: web"],
+      "dependsOrder": "sequence",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "vite-preview",
+        "pattern": { "regexp": "." },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "vite",
+          "endsPattern": "Local:"
+        }
+      },
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "release: all",
+      "dependsOn": ["release: web", "release: desktop"],
+      "dependsOrder": "sequence",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    }
+  ]
+}

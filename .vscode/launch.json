@@ -1,0 +1,52 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Tauri: Dev (Desktop)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/@tauri-apps/cli/tauri.js",
+      "args": ["dev"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "preLaunchTask": "kill-port-5174"
+    },
+    {
+      "name": "Web: Vite Dev Server",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://localhost:5174",
+      "webRoot": "${workspaceFolder}/src",
+      "preLaunchTask": "npm: dev"
+    },
+    {
+      "name": "Rust: Debug Backend",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/src-tauri/target/debug/pose-estimation.exe",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS": "--remote-debugging-port=9222"
+      },
+      "preLaunchTask": "cargo: build"
+    },
+    {
+      "name": "Web: Release Preview",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://localhost:4173",
+      "webRoot": "${workspaceFolder}/dist",
+      "preLaunchTask": "serve: web"
+    },
+    {
+      "name": "Android: Dev",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/@tauri-apps/cli/tauri.js",
+      "args": ["android", "dev"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": { "ANDROID_HOME": "d:\\android\\sdk" }
+    }
+  ]
+}
