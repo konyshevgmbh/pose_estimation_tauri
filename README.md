@@ -1,6 +1,6 @@
 # Pose Estimation Tauri
 
-Test project — a desktop app built with [Tauri v2](https://tauri.app/) for real-time human pose estimation.
+Experiment — a desktop app built with [Tauri v2](https://tauri.app/) for real-time human pose estimation, created to compare with the [Flutter implementation](https://github.com/konyshevgmbh/pose_estimation_flutter).
 
 ## Stack
 
